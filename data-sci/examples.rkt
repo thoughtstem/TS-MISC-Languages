@@ -634,7 +634,7 @@
   populations)
 
 
-(new-stimuli data-sci-real-data-509 "Display a bar chart that compares the population of all cities in the titanic data set.")
+(new-stimuli data-sci-real-data-509 "Display a bar chart that compares the population of all cities in the large-cities data set.")
 (define-example-code 
 ;  #:with-test (test no-test)
   
@@ -653,6 +653,35 @@
                                  #:invert? #t)
              #:height 700
              #:width 700))
+
+(new-stimuli data-sci-real-data-510 "Display a bar chart that shows the count of largest cities per country in the large-cities data set.")
+(define-example-code 
+;  #:with-test (test no-test)
+  
+  data-sci
+  data-sci-real-data-510
+
+  (define the-data (data-set large-cities))
+
+  (define country-names (sort (map second the-data) string<?))
+
+  (define unique-countries (remove-duplicates country-names))
+
+  (define (count-times s)
+    (count (lambda (x) (equal? s x)) country-names))
+
+  (define counted
+    (map count-times unique-countries))
+
+  (define country-times
+    (zip unique-countries counted))
+
+  (plot-pict
+   (discrete-histogram
+    country-times
+    #:invert? #t)
+   #:height 700
+   #:width 700))
 
 (new-stimuli data-sci-real-data-600 "Print the first ten rows of the titanic data set.")
 (define-example-code 
@@ -734,12 +763,36 @@
   
   average)
 
-(new-stimuli data-sci-real-data-605 "Make a histogram of the ages and names of everyone under 10 in the titanic data set.  Sort your data so the histogram looks pretty.")
+(new-stimuli data-sci-real-data-605 "Make a graph with the average ages of the people who lived and who died.")
 (define-example-code 
 ;  #:with-test (test no-test)
   
   data-sci
   data-sci-real-data-605
+
+  (define the-data (data-set titanic))
+
+  (define (filter-ages-by n)
+    (map titanic-row-age
+         (filter (lambda (x) (= n (first x))) the-data)))
+
+  (define lived-average (mean (filter-ages-by 1)))
+
+  (define died-average (mean (filter-ages-by 0)))
+  
+  (plot-pict
+   #:title "Average Age by Survival"
+   (discrete-histogram
+    (list (vector 'alive-people lived-average)
+          (vector 'dead-people died-average))))
+  )
+
+(new-stimuli data-sci-real-data-606 "Make a histogram of the ages and names of everyone under 10 in the titanic data set.  Sort your data so the histogram looks pretty.")
+(define-example-code 
+;  #:with-test (test no-test)
+  
+  data-sci
+  data-sci-real-data-606
 
   (define the-data
     (sort (data-set titanic)
@@ -761,6 +814,58 @@
 	#:height 1000
 	#:width 700))
 
+(new-stimuli data-sci-real-data-607 "Make a histogram of the surviving rate by age.")
+(define-example-code 
+  ;  #:with-test (test no-test)
+  
+  data-sci
+  data-sci-real-data-607
+
+  (define the-data
+    (sort
+     (data-set titanic)
+     <
+     #:key titanic-row-age))
+
+  (define ages (map titanic-row-age the-data))
+
+  (define unique-ages (remove-duplicates ages))
+
+  (define status (map titanic-row-survived? the-data))
+
+  (define (counted-ages a)
+    (count (lambda (x) (equal? a x)) ages))
+
+  (define age-frequency
+    (map counted-ages unique-ages))
+
+  (define position 0)
+
+  (define (count-alive to)
+    (define sub-list (take (drop status position) to))
+    (set! position (+ position to))
+    (count (lambda (x) (equal? #t x)) sub-list))
+
+  (define status-per-age
+    (map count-alive age-frequency))
+
+  (define (get-rate s n)
+    (truncate (* 100 (exact->inexact (/ s n)))))
+
+  (define rate-by-age
+    (map get-rate status-per-age age-frequency))
+
+  (define surviving-rate-by-age
+    (zip unique-ages rate-by-age))
+
+  (plot-pict
+   (discrete-histogram
+    surviving-rate-by-age
+    #:invert? #t)
+   #:height 1200
+   #:width 700
+   #:y-label "Age"
+   #:x-label "Surviving Rate"))
 
 ;Add more histogram related things for both datasets
 
